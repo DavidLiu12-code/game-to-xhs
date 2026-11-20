@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="format-detection" content="telephone=no">
+<title>点点星球</title>
+<link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+<div class="app" id="app">
+
+  <!-- 顶部：分数 / 连击 / 时间 -->
+  <header class="hud" id="hud">
+    <div class="hud-item">
+      <span class="hud-label">得分</span>
+      <span class="hud-value" id="score">0</span>
+    </div>
+    <div class="hud-item">
+      <span class="hud-label">连击</span>
+      <span class="hud-value" id="combo">0</span>
+    </div>
+    <div class="hud-item">
+      <span class="hud-label">时间</span>
+      <span class="hud-value" id="clock">30</span>
+    </div>
+    <div class="progress"><div class="progress-bar" id="progress"></div></div>
+  </header>
+
+  <!-- 舞台：目标点在这里出现 -->
+  <main class="stage" id="stage">
+    <div class="target" id="target" aria-hidden="true"></div>
+    <div class="float-score" id="floatScore" aria-hidden="true"></div>
+  </main>
+
+  <!-- 启动屏 -->
+  <section class="screen" id="screenStart">
+    <h1 class="title">点点星球</h1>
+    <p class="subtitle">30 秒，看谁点得又准又稳</p>
+    <ul class="rules">
+      <li>点亮起的小星球，点中得分</li>
+      <li>连着点中，连击越高分越多</li>
+      <li>时间到自动结算，破纪录有奖牌</li>
+    </ul>
+    <button class="btn btn-primary" id="btnStart" type="button">开始</button>
+    <p class="tip" id="startTip"></p>
+  </section>
+
+  <!-- 结算屏 -->
+  <section class="screen screen-result" id="screenResult" hidden>
+    <p class="result-medal" id="medal">再来一次</p>
+    <p class="result-score" id="finalScore">0</p>
+    <p class="result-meta"><span id="finalBest">最佳 0</span> · <span id="finalCombo">最高连击 0</span></p>
+    <div class="result-actions">
+      <button class="btn btn-primary" id="btnAgain" type="button">再来一局</button>
+      <button class="btn btn-ghost" id="btnPoster" type="button" hidden>保存成绩图</button>
+      <button class="btn btn-ghost" id="btnShare" type="button" hidden>分享</button>
+      <button class="btn btn-ghost" id="btnFollow" type="button" hidden>关注作者</button>
+    </div>
+    <p class="tip" id="resultTip"></p>
+  </section>
+
+  <!-- 声音开关 -->
+  <button class="sound-toggle" id="btnSound" type="button" aria-label="声音开关">🔊</button>
+</div>
+
+<div class="toast" id="toast" hidden></div>
+
+<script src="./core.js"></script>
+<script src="./platform.js"></script>
+<script src="./audio.js"></script>
+<script src="./app.js"></script>
+</body>
+</html>
