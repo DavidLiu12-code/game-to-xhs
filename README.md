@@ -1,5 +1,7 @@
 # game-to-xhs · 小红书小工具工坊
 
+[![check](https://github.com/DavidLiu12-code/game-to-xhs/actions/workflows/check.yml/badge.svg)](https://github.com/DavidLiu12-code/game-to-xhs/actions/workflows/check.yml)
+
 把一个「想法」或「一个想复刻的小游戏」，在**同一个对话里**做成能提交审核的小红书小工具。
 
 这个 skill 是一整套流程 + 可执行工具，不是提示词合集：它带着两套跑得起来的起步工程、一个打包前自检脚本、一个零依赖打包脚本，以及一份从真实上线项目里踩出来的平台踩坑清单。
@@ -98,6 +100,27 @@ node scripts/preflight.js --zip release/tool.zip --name "点点星球" --slogan 
 ```
 
 退出码：`0` 通过、`1` 有 FAIL、`2` 用法或输入错误。
+
+## 开发自检 / CI
+
+仓库自带 GitHub Actions（[`check.yml`](.github/workflows/check.yml)），每次 push 会跑：
+
+1. `node --check` 语法检查（脚本与零构建模板）
+2. 生成测试用图标（512×512）与封面（1080×1440）
+3. 零构建模板 preflight → 必须 0 FAIL
+4. `make-zip.js` 打包 → 再对 zip 跑一次 preflight
+5. Vite 模板 `npm install` + `build` → 对 `dist/` 跑 preflight
+6. **反例回归**：喂 512×600 的图标和 1000×1000 的封面，必须被拦下并报出 1:1 / 3:4 错误
+
+本地跑同一套：
+
+```bash
+node scripts/dev-make-test-images.js .test-assets
+node scripts/preflight.js --dir templates/stable-app --name 演示工具 --slogan 一句话说明 \
+  --version 1.0.0 --icon .test-assets/icon.png --cover .test-assets/cover.png
+```
+
+`scripts/dev-make-test-images.js` 只是生成自检用的纯色 PNG，不是设计素材。
 
 ## 已验证 / 未验证
 

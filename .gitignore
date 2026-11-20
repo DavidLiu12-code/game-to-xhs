@@ -16,6 +16,10 @@ __MACOSX/
 .idea/
 .vscode/
 
+# CI / 本地自检产物
+.test-assets/
+bad.log
+
 # 本地临时文件
 *.bak-*
 *.log

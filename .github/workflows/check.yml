@@ -1,0 +1,80 @@
+name: check
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  preflight:
+    name: preflight & build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: 语法检查（CommonJS 脚本与零构建模板）
+        run: |
+          set -e
+          for f in scripts/*.js templates/stable-app/*.js; do
+            echo "node --check $f"
+            node --check "$f"
+          done
+
+      - name: 生成测试用图标与封面
+        run: node scripts/dev-make-test-images.js .test-assets
+
+      - name: 零构建模板 preflight
+        run: |
+          node scripts/preflight.js \
+            --dir templates/stable-app \
+            --name 演示工具 --slogan 一句话说明 --version 1.0.0 \
+            --icon .test-assets/icon.png --cover .test-assets/cover.png
+
+      - name: 打包并复查 zip
+        run: |
+          node scripts/make-zip.js --dir templates/stable-app --out .test-assets/tool.zip
+          node scripts/preflight.js \
+            --zip .test-assets/tool.zip \
+            --name 演示工具 --slogan 一句话说明 --version 1.0.0 \
+            --icon .test-assets/icon.png --cover .test-assets/cover.png
+
+      - name: Vite 模板构建
+        working-directory: templates/vite-app
+        run: |
+          npm install --no-audit --no-fund
+          npm run build
+
+      - name: Vite 构建产物 preflight
+        run: |
+          node scripts/preflight.js \
+            --dir templates/vite-app/dist \
+            --name 演示工具 --slogan 一句话说明 --version 1.0.0 \
+            --icon .test-assets/icon.png --cover .test-assets/cover.png
+
+      - name: 反例必被拦下（图标比例 / 封面比例）
+        run: |
+          set +e
+          node -e "
+            const fs=require('node:fs');
+            // 复用测试图生成器的思路：直接写一个 512x600 的错误图标
+            const zlib=require('node:zlib');
+            const T=[];for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=c&1?0xedb88320^(c>>>1):c>>>1;T[n]=c>>>0;}
+            const crc=b=>{let c=0xffffffff;for(let i=0;i<b.length;i++)c=T[(c^b[i])&0xff]^(c>>>8);return (c^0xffffffff)>>>0;};
+            const ch=(t,d)=>{const l=Buffer.alloc(4);l.writeUInt32BE(d.length,0);const body=Buffer.concat([Buffer.from(t,'ascii'),d]);const c=Buffer.alloc(4);c.writeUInt32BE(crc(body),0);return Buffer.concat([l,body,c]);};
+            const mk=(w,h)=>{const raw=Buffer.alloc(h*(1+w*3));const ih=Buffer.alloc(13);ih.writeUInt32BE(w,0);ih.writeUInt32BE(h,4);ih[8]=8;ih[9]=2;return Buffer.concat([Buffer.from([137,80,78,71,13,10,26,10]),ch('IHDR',ih),ch('IDAT',zlib.deflateSync(raw)),ch('IEND',Buffer.alloc(0))]);};
+            fs.writeFileSync('.test-assets/bad-icon.png',mk(512,600));
+            fs.writeFileSync('.test-assets/bad-cover.png',mk(1000,1000));
+          "
+          node scripts/preflight.js --dir templates/stable-app --name 演示工具 --slogan 一句话说明 --version 1.0.0 \
+            --icon .test-assets/bad-icon.png --cover .test-assets/bad-cover.png > bad.log 2>&1
+          code=$?
+          cat bad.log
+          if [ "$code" -eq 0 ]; then echo "::error::错误输入没有被拦下"; exit 1; fi
+          grep -q '1:1' bad.log
+          grep -q '3:4' bad.log
+          echo "反例已按预期被拦下"
